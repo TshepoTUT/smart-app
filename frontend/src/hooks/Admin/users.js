@@ -99,14 +99,6 @@ const useUsers = (initialPage = 1, initialLimit = 10) => {
               navigate('/login');
               throw refreshError; // Propagate the error
             }
-          } catch (refreshError) {
-            console.error("Token refresh failed:", refreshError);
-            // If refresh also fails, navigate to login
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('user');
-            navigate('/login');
-            throw refreshError; // Propagate the error
-          }
         }
         // If the initial response was not 304, return it as-is
         return response;
