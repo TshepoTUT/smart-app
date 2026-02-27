@@ -141,16 +141,16 @@ model User {
 }
 
 model Account {
-  id                  String    @id @default(uuid())
-  userId              String    @unique
+  id                  String   @id @default(uuid())
+  userId              String   @unique
   passwordHash        String
-  emailVerified       Boolean   @default(false)
-  failedLoginAttempts Int       @default(0)
+  emailVerified       Boolean  @default(false)
+  failedLoginAttempts Int      @default(0)
   lockedAt            DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  user     User        @relation(fields: [userId], references: [id])
+  user     User        @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   sessions Session[]
   tokens   AuthToken[]
 }
@@ -163,7 +163,7 @@ model Session {
   createdAt DateTime @default(now())
   expiresAt DateTime
 
-  account Account @relation(fields: [accountId], references: [id])
+  account Account @relation(fields: [accountId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 }
 
 model AuthToken {
@@ -176,50 +176,50 @@ model AuthToken {
   ipAddress String?
   userAgent String?
 
-  account Account @relation(fields: [accountId], references: [id])
+  account Account @relation(fields: [accountId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 }
 
 model OrganizerProfile {
-  id                String    @id @default(uuid())
-  userId            String    @unique
-  isInternal        Boolean   @default(false)
-  verified          Boolean   @default(false)
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  isInternal        Boolean  @default(false)
+  verified          Boolean  @default(false)
   verifiedByAdminId String?
   verifiedAt        DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  user            User       @relation(fields: [userId], references: [id])
+  user            User       @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   uploadedDocs    Document[]
   approvals       Approval[] @relation("OrganizerApprovals")
-  verifiedByAdmin User?      @relation("AdminVerifications", fields: [verifiedByAdminId], references: [id])
+  verifiedByAdmin User?      @relation("AdminVerifications", fields: [verifiedByAdminId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 }
 
 model Document {
-  id          String    @id @default(uuid())
-  userId      String
-  eventId     String?
-  purchaseId  String?
-  bookingId   String?
-  type        DocType   @default(ID)
-  filename    String
-  mimetype    String?
-  url         String?
-  content     Bytes?
-  size        Int?
-  eventName   String?
-  status      DocStatus @default(PENDING)
-  submittedAt DateTime  @default(now())
-  reviewedAt  DateTime?
-  reviewedBy  String?
-  deletedAt   DateTime?
-
-  user               User              @relation(fields: [userId], references: [id])
-  event              Event?            @relation(fields: [eventId], references: [id])
-  purchase           Purchase?         @relation(fields: [purchaseId], references: [id])
-  booking            Booking?          @relation(fields: [bookingId], references: [id])
+  id                 String    @id @default(uuid())
+  userId             String
+  eventId            String?
+  purchaseId         String?
+  bookingId          String?
+  type               DocType   @default(ID)
+  filename           String
+  mimetype           String?
+  url                String?
+  content            Bytes?
+  size               Int?
+  eventName          String?
+  status             DocStatus @default(PENDING)
+  submittedAt        DateTime  @default(now())
+  reviewedAt         DateTime?
+  reviewedBy         String?
+  deletedAt          DateTime?
   organizerProfileId String?
-  organizerProfile   OrganizerProfile? @relation(fields: [organizerProfileId], references: [id])
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  event            Event?            @relation(fields: [eventId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  purchase         Purchase?         @relation(fields: [purchaseId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  booking          Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  organizerProfile OrganizerProfile? @relation(fields: [organizerProfileId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([purchaseId, type])
   @@index([bookingId, type])
@@ -242,10 +242,10 @@ model Venue {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  imageUrls Json @default("[]")
-  events   Event[]
-  tools    Tool[]
-  bookings Booking[]
+  imageUrls Json
+  events    Event[]
+  tools     Tool[]
+  bookings  Booking[]
 }
 
 model Purchase {
@@ -260,14 +260,13 @@ model Purchase {
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   deletedAt           DateTime?
+  ticketDefinitionId  String
 
-  user      User       @relation(fields: [userId], references: [id])
-  event     Event      @relation(fields: [eventId], references: [id])
+  user      User       @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   tickets   Ticket[]
   documents Document[]
   invoice   Invoice?
-
-  ticketDefinitionId String
 }
 
 model Booking {
@@ -282,13 +281,14 @@ model Booking {
   status          BookingStatus @default(PENDING_PAYMENT)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  calendarId String?
-  event     Event      @relation(fields: [eventId], references: [id])
-  organizer User       @relation(fields: [organizerId], references: [id])
-  venue     Venue      @relation(fields: [venueId], references: [id])
+  calendarId      String?
+
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  organizer User       @relation(fields: [organizerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  venue     Venue      @relation(fields: [venueId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   invoice   Invoice?
-  documents Document[] 
-  calendar   Calendar?  @relation("CalendarBookings", fields: [calendarId], references: [id])
+  documents Document[]
+  calendar  Calendar?  @relation("CalendarBookings", fields: [calendarId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 }
 
 model Invoice {
@@ -300,20 +300,22 @@ model Invoice {
   currency      String        @default("ZAR")
   issuedAt      DateTime      @default(now())
   status        InvoiceStatus @default(PENDING)
-  venueIssuer   VenueIssuer   @relation(fields: [venueIssuerId], references: [id])
-  purchase      Purchase?     @relation(fields: [purchaseId], references: [id])
-  booking       Booking?      @relation(fields: [bookingId], references: [id])
   venueIssuerId String
+
+  venueIssuer VenueIssuer @relation(fields: [venueIssuerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  purchase    Purchase?   @relation(fields: [purchaseId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  booking     Booking?    @relation(fields: [bookingId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 }
 
 model VenueIssuer {
-  id                 String    @id @default(uuid())
+  id                 String  @id @default(uuid())
   institutionName    String
   institutionAddress Json
   institutionLogoUrl String?
   institutionLogo    Bytes?
   otherDetails       Json
-  Invoice            Invoice[]
+
+  invoices Invoice[]
 }
 
 model Tool {
@@ -327,51 +329,41 @@ model Tool {
   venues Venue[]
 }
 
-// ... (other parts of your schema remain the same)
-
 model Event {
-  id                    String      @id @default(uuid())
-  name                  String
-  description           String
-  startDateTime         DateTime
-  endDateTime           DateTime
-  status                EventStatus @default(DRAFT)
-  expectedAttend        Int?
-  totalTickets          Int?
-  isFree                Boolean     @default(true)
-  ticketRequired        Boolean     @default(true)
-  autoDistribute        Boolean     @default(true)
-  allowAttendeePurchase Boolean     @default(false)
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
-  deletedAt             DateTime?
+  id                           String      @id @default(uuid())
+  name                         String
+  description                  String
+  startDateTime                DateTime
+  endDateTime                  DateTime
+  status                       EventStatus @default(DRAFT)
+  expectedAttend               Int?
+  totalTickets                 Int?
+  isFree                       Boolean     @default(true)
+  ticketRequired               Boolean     @default(true)
+  autoDistribute               Boolean     @default(true)
+  allowAttendeePurchase        Boolean     @default(false)
+  createdAt                    DateTime    @default(now())
+  updatedAt                    DateTime    @updatedAt
+  deletedAt                    DateTime?
+  venueId                      String
+  organizerId                  String
+  themeId                      String?
+  requestedResourcesAndServices Json?
 
-  venueId     String
-  organizerId String
-  themeId     String?
-
-  // --- New Field ---
-  // Stores the resources and services requested by the organizer
-  // Example structure: { "Chair": 50, "Table": 10, "Liquor": true, "Extra Security Guard": false, "Microphone": 2 }
-  requestedResourcesAndServices Json? // Use Json? to make it optional
-
-  // --- Existing Relations ---
-  venue             Venue              @relation(fields: [venueId], references: [id])
-  organizer         User               @relation("OrganizerEvents", fields: [organizerId], references: [id])
+  venue             Venue              @relation(fields: [venueId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  organizer         User               @relation("OrganizerEvents", fields: [organizerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  theme             Theme?             @relation(fields: [themeId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   registrations     Registration[]
   attendance        Attendance[]
   approvals         Approval[]         @relation("EventApprovals")
   reports           Report[]
   tickets           Ticket[]
-  liquorRequests    LiquorRequest[] // Note: This might overlap with requestedResourcesAndServices if "Liquor" is just a service
+  liquorRequests    LiquorRequest[]
   documents         Document[]
   purchases         Purchase[]
-  Theme             Theme?             @relation(fields: [themeId], references: [id])
   ticketDefinitions TicketDefinition[]
   booking           Booking?
 }
-
-// ... (rest of the schema remains the same)
 
 model TicketDefinition {
   id        String    @id @default(uuid())
@@ -383,7 +375,7 @@ model TicketDefinition {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  event   Event    @relation(fields: [eventId], references: [id])
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   tickets Ticket[]
 
   @@unique([eventId, name])
@@ -398,8 +390,8 @@ model Registration {
   requestedTicket Boolean            @default(true)
   status          RegistrationStatus @default(PENDING)
 
-  user   User    @relation(fields: [userId], references: [id])
-  event  Event   @relation(fields: [eventId], references: [id])
+  user   User    @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  event  Event   @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   ticket Ticket?
 
   @@unique([userId, eventId])
@@ -412,8 +404,8 @@ model Attendance {
   status    AttendanceStatus
   checkedAt DateTime         @default(now())
 
-  user  User  @relation(fields: [userId], references: [id])
-  event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([userId, eventId])
 }
@@ -433,11 +425,11 @@ model Ticket {
   redeemedAt         DateTime?
   deletedAt          DateTime?
 
-  event            Event            @relation(fields: [eventId], references: [id])
-  user             User?            @relation(fields: [userId], references: [id])
-  registration     Registration?    @relation(fields: [registrationId], references: [id])
-  purchase         Purchase?        @relation(fields: [purchaseId], references: [id])
-  ticketDefinition TicketDefinition @relation(fields: [ticketDefinitionId], references: [id])
+  event            Event            @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user             User?            @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  registration     Registration?    @relation(fields: [registrationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  purchase         Purchase?        @relation(fields: [purchaseId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  ticketDefinition TicketDefinition @relation(fields: [ticketDefinitionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 }
 
 model LiquorRequest {
@@ -448,29 +440,29 @@ model LiquorRequest {
   policyAgreed Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  approvalId   String?  @unique
 
-  event      Event     @relation(fields: [eventId], references: [id])
-  approvalId String?   @unique
-  approval   Approval? @relation(fields: [approvalId], references: [id])
+  event    Event     @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  approval Approval? @relation(fields: [approvalId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 }
 
 model Approval {
-  id         String         @id @default(uuid())
-  targetType String
-  targetId   String
-  type       ApprovalType
-  status     ApprovalStatus @default(PENDING)
-  approverId String?
-  notes      String?
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-
-  approver           User?             @relation("Approver", fields: [approverId], references: [id])
+  id                 String         @id @default(uuid())
+  targetType         String
+  targetId           String
+  type               ApprovalType
+  status             ApprovalStatus @default(PENDING)
+  approverId         String?
+  notes              String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
   organizerProfileId String?
-  organizerProfile   OrganizerProfile? @relation("OrganizerApprovals", fields: [organizerProfileId], references: [id])
   eventId            String?
-  event              Event?            @relation("EventApprovals", fields: [eventId], references: [id])
-  liquorRequest      LiquorRequest?
+
+  approver         User?             @relation("Approver", fields: [approverId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  organizerProfile OrganizerProfile? @relation("OrganizerApprovals", fields: [organizerProfileId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  event            Event?            @relation("EventApprovals", fields: [eventId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  liquorRequest    LiquorRequest?
 }
 
 model Report {
@@ -480,8 +472,8 @@ model Report {
   content   String
   createdAt DateTime @default(now())
 
-  event  Event @relation(fields: [eventId], references: [id])
-  author User? @relation(fields: [authorId], references: [id])
+  event  Event @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 }
 
 model Theme {
@@ -510,12 +502,12 @@ model Calendar {
   date        DateTime
   startTime   String
   endTime     String
-  venueIds    Json // list of venue IDs (UUIDs)
-  createdById String? // optional (admin user who created this availability)
+  venueIds    Json
+  createdById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy User?     @relation("UserCreatedCalendars", fields: [createdById], references: [id])
+  createdBy User?     @relation("UserCreatedCalendars", fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade)
   bookings  Booking[] @relation("CalendarBookings")
 
   @@unique([date, startTime, endTime])
