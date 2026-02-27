@@ -22,14 +22,14 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Password strength validator
+  // Password policy aligned with backend default:
+  // min 10 chars, at least one uppercase, one lowercase, one digit
   const validatePasswordStrength = (password) => {
-    const minLength = password.length >= 8;
+    const minLength = password.length >= 10;
     const hasUpper = /[A-Z]/.test(password);
     const hasLower = /[a-z]/.test(password);
     const hasNumber = /\d/.test(password);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    return minLength && hasUpper && hasLower && hasNumber && hasSpecial;
+    return minLength && hasUpper && hasLower && hasNumber;
   };
 
   const handleChange = (e) => {
@@ -39,7 +39,7 @@ export default function Register() {
     if (name === 'password') {
       if (value && !validatePasswordStrength(value)) {
         toast.error(
-          'Weak password! Must include upper, lower, number, special char & 8+ chars.',
+          'Password must be at least 10 characters and include uppercase, lowercase, and a number.',
           { id: 'password-toast', duration: 4000 }
         );
       } else {
@@ -64,7 +64,15 @@ export default function Register() {
     setLoading(true);
 
     if (!validatePasswordStrength(form.password)) {
-      toast.error('Password does not meet requirements!');
+      toast.error(
+        'Password must be at least 10 characters and include uppercase, lowercase, and a number.'
+      );
+      setLoading(false);
+      return;
+    }
+
+    if (form.role === 'organizer' && !form.phone.trim()) {
+      toast.error('Phone number is required for organizer registration.');
       setLoading(false);
       return;
     }
@@ -140,6 +148,7 @@ export default function Register() {
           value={form.phone}
           onChange={handleChange}
           placeholder="Enter your phone number"
+          required={form.role === 'organizer'}
           disabled={loading}
         />
 
